@@ -1,0 +1,31 @@
+# fix district 00
+
+If your name is not James Marca, go away now.
+
+This batch of programs is here to split up very very large couchdbs,
+based on some rules.
+
+It is not generic, but perhaps might be made so with a few callbacks
+inserted.
+
+The problem is that I have a number of databases with hundreds of
+gigabytes of data in them, and the map reduce computation on a view
+uses one core and takes an age.
+
+In my particular case, I can split up the databases based on the
+district and the year of each document.
+
+This program (which isn't done yet) will look at the database, pull of
+blocks of docs, process them, bulk save those docs to the correct,
+sharded db, and then continue down through the next batch of documents
+in the original db.
+
+Yes, reading and writing hundreds of gigabytes is stupid.  It would be
+better to not make this mistake in the first place, but there you go.
+
+# also
+
+I am writing this with very small components and trying to be somewhat
+disciplined about testing each one.  If I screw up, I will destroy
+hundreds of gigabytes of data, so it is good to know that I won't do
+that.
