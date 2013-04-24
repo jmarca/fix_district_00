@@ -1,0 +1,40 @@
+{
+  "name": "fix_district_00",
+  "version": "0.0.1",
+  "description": "break up a big couchdb into smaller ones",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+      "lodash": "",
+      "superagent": "",
+      "async": "",
+      "couch_check_state":"git://github.com/jmarca/couch_check_state.git",
+      "couch_set_state":"git://github.com/jmarca/couch_set_state.git",
+      "couchdb_get_views":"git://github.com/jmarca/couchdb_get_views.git",
+      "couchdb_bulkdoc_saver":"git://github.com/jmarca/couchdb_bulkdoc_saver.git",
+      "couchdb_toQuery": "git://github.com/jmarca/couchdb_toQuery.git",
+      "couchdb_put_view":"git://github.com/jmarca/couchdb_put_view.git"
+
+  },
+  "devDependencies": {
+    "should": "~1.2.2"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jmarca/fix_district_00.git"
+  },
+  "keywords": [
+    "couchdb",
+    "breakup",
+    "shard",
+    "custom"
+  ],
+  "author": "James E. Marca",
+  "license": "MIT",
+  "readmeFilename": "README.mdt"
+}
