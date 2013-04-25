@@ -44,9 +44,9 @@ before(function(done){
         // generate some random docs
         var docs=[]
         for(var i=1;i<1000;i++){
-            var vdsid = ['1132',Math.floor(Math.random()*100)].join('')
+            var vdsid = ['11320',Math.floor(Math.random()*100)].join('')
             var ts='2007-02-01 23:23:00'
-            docs.push({'_id':'doc_'+i
+            docs.push({'_id':i+'_doc'
                       ,'data':[{vdsid:vdsid
                                ,ts:ts}
                               ,{vdsid:vdsid
@@ -82,8 +82,8 @@ before(function(done){
 after(function(done){
     var uri = 'http://'+chost+':'+cport+'/'+tracking_db
     // bail in development
-    console.log({tracking_db:tracking_db
-                ,test_db:test_db})
+    //console.log({tracking_db:tracking_db
+    //            ,test_db:test_db})
     //return done()
     async.each([tracking_db,test_db]
               ,function(db,cb){
@@ -105,33 +105,49 @@ describe('get docs',function(){
 
     it('should get 10 docs and create the tracking db'
       ,function(done){
-           async.each([1,2]
-                     ,function(i,cb){
-                          get_docs(test_db,function(e,docs){
-                              if(e) return cb(e)
-                              _.each(docs
-                                    ,function(resp){
-                                         resp.should.have.property('key')
-                                         resp.should.have.property('doc')
-                                         resp.doc.should.have.property('_id')
-                                     });
-                              docs.should.have.property.length(100)
-                              // check the tracking db
-                              couch_check({'db':tracking_db
-                                          ,'doc':test_db
-                                          ,'state':'fetched'
-                                          }
-                                         ,function(err,state){
-                                              if(err) return cb(err)
-                                              state.should.eql(i*100)
-                                              return cb(null)
-                                          })
-                              return null
-                          });
-                          return null
-                      }
-                     ,done
-                     );
+           async.eachSeries([1,2,3,4,5,6,7,8,9]
+                           ,function(i,cb){
+                                get_docs(test_db,function(e,docs){
+                                    if(e) return cb(e)
+                                    _.each(docs
+                                          ,function(resp){
+                                               resp.should.have.property('key')
+                                               resp.should.have.property('doc')
+                                               resp.doc.should.have.property('_id')
+                                           });
+                                    docs.should.have.property('length',100)
+                                    // check the tracking db
+                                    couch_check({'db':tracking_db
+                                                ,'doc':test_db
+                                                ,'state':'fetched'
+                                                }
+                                               ,function(err,state){
+                                                    if(err) return cb(err)
+                                                    return cb(null)
+                                                })
+                                    return null
+                                });
+                                return null
+                            }
+                           ,function(e,r){
+                                get_docs(test_db,function(e,docs){
+                                    if(e) return cb(e)
+                                    docs.should.have.property('length',99)
+                                    _.each(docs
+                                          ,function(resp){
+                                               resp.should.have.property('key')
+                                               resp.should.have.property('doc')
+                                               resp.doc.should.have.property('_id')
+                                           });
+                                    get_docs(test_db,function(e,docs){
+                                        if(e) return cb(e)
+                                        should.not.exist(docs)
+                                        return done()
+                                    })
+                                    return null
+                                })
+                                return null
+                            })
            return null
 
        })

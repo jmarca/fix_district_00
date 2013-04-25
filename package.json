@@ -10,6 +10,7 @@
       "lodash": "",
       "superagent": "",
       "async": "",
+      "geom_utils":"git://github.com/jmarca/geom_utils.git",
       "couch_check_state":"git://github.com/jmarca/couch_check_state.git",
       "couch_set_state":"git://github.com/jmarca/couch_set_state.git",
       "couchdb_get_views":"git://github.com/jmarca/couchdb_get_views.git",
