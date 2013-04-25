@@ -36,15 +36,16 @@ function lame(file,fn){
     })
 }
 var path = require('path')
-var filepath = path.normalize(__dirname+'/files/wimdoc.json')
+var wimfilepath = path.normalize(__dirname+'/files/wimdoc.json')
+var vdsfilepath = path.normalize(__dirname+'/files/vdsdoc.json')
 
 describe('wim site',function(){
 
-    it('should make a wim db'
+    it('should read a wim file'
       ,function(done){
            // open file, pass to doc_get_dy
            async.waterfall([function(cb){
-                                return cb(null,filepath)
+                                return cb(null,wimfilepath)
                             }
                            ,lame
                            ,doc_get_dy]
@@ -52,6 +53,23 @@ describe('wim site',function(){
                                should.exist(result)
                                result.should.have.property('district','wim')
                                result.should.have.property('year',2007)
+                               return done()
+                           })
+           return null
+
+       })
+    it('should read a vds file'
+      ,function(done){
+           // open file, pass to doc_get_dy
+           async.waterfall([function(cb){
+                                return cb(null,vdsfilepath)
+                            }
+                           ,lame
+                           ,doc_get_dy]
+                          ,function(e,result){
+                               should.exist(result)
+                               result.should.have.property('district','d03')
+                               result.should.have.property('year',2008)
                                return done()
                            })
            return null
