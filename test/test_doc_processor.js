@@ -1,7 +1,6 @@
 /* global require console process describe it */
 
 var should = require('should')
-
 var _ = require('lodash')
 var async = require('async')
 var superagent = require('superagent')
@@ -17,6 +16,8 @@ var cport = env.COUCHDB_PORT || 5984;
 
 // any db with something in it
 // I should probably create this db
+
+var pad = require('geom_utils').pad
 
 var test_db = env.TEST_GET_DOCS_DB
 
@@ -38,7 +39,6 @@ function lame(file,fn){
         if(err){console.log('die')
                 console.log(err)
                 throw new Error(err)}
-        var doc = JSON.parse(d)
         return fn(null,JSON.parse(d))
     })
 }
@@ -55,7 +55,10 @@ var processor = doc_process.doc_process
 
 var created_locally=false
 var cleardbs=[[prefix,'wim',2007].join('%2f')
-             ,[prefix,'d03',2008].join('%2f')]
+             ,[prefix,'d03',2008].join('%2f')
+             ,[prefix,'d11',2007].join('%2f')
+             ,tracking_db
+             ]
 
 before(function(done){
     superagent.put(couch+'/'+tracking_db)
@@ -66,17 +69,20 @@ before(function(done){
 
         // create a test db, the put data into it
         test_db ='test%2fgetter%2f'+Math.floor(Math.random() * 100)
+        cleardbs.push(test_db)
         created_locally=true
         var bulks = make_saver(test_db)
         // generate some random docs
         var docs=[]
         for(var i=1;i<1000;i++){
-            var vdsid = ['11320',Math.floor(Math.random()*100)].join('')
+            var vdsid = ['113'
+                        ,pad(Math.floor(Math.random()*100))
+                        ,pad(Math.floor(Math.random()*100))].join('')
             var ts='2007-02-01 23:23:00'
             docs.push({'_id':i+'_doc'
-                      ,'data':[{vdsid:vdsid
+                      ,'data':[{vds_id:vdsid
                                ,ts:ts}
-                              ,{vdsid:vdsid
+                              ,{vds_id:vdsid
                                ,ts:ts}
                               ]
                       })
@@ -120,7 +126,7 @@ after(function(done){
                    .type('json')
                    .auth(cuser,cpass)
                    .end(function(e,r){
-                       if(e) return done(e)
+                       //if(e) return done(e)
                        return cb()
                    })
                    return null
@@ -130,7 +136,7 @@ after(function(done){
 })
 
 
-describe('process docs',function(){
+describe('process real docs',function(){
 
     it('should save docs to wim and d03 couchdbs'
       ,function(done){
@@ -172,6 +178,60 @@ describe('process docs',function(){
                                 })
                                 return null
                             })
+       })
+
+})
+
+describe('process fake docs',function(){
+
+    it('should save docs to wim and d03 couchdbs'
+      ,function(done){
+           async.waterfall([function(cb){
+                                get_docs(test_db,function(e,docs){
+                                    if(! docs.length ) throw new Error('die')
+                                    cb(null,docs)
+                                })
+                                return null
+                            }
+                           ,function(docs,cb){
+                                async.each(docs
+                                          ,processor
+                                          ,function(e,r){
+                                               should.not.exist(e)
+                                               return cb(null,docs)
+                                           });
+                                return null
+                            }
+                           ,function(docs,cb){
+                                saver(function(e){
+                                    should.not.exist(e)
+                                    return cb(null,docs)
+                                })
+                            }]
+                          ,function(e,docs){
+                               should.not.exist(e)
+                               var db = [prefix,'d11',2007].join('%2f')
+                               async.eachLimit(docs,2
+                                               ,function(doc,cb){
+                                                    var id = doc._id
+                                                    if(!id)throw new Error('die')
+                                                    superagent.get(couch+'/'+db+'/'+id)
+                                                    .type('json')
+                                                    .set('accept','application/json')
+                                                    .end(function(e,r){
+                                                        should.not.exist(e)
+                                                        var saved = r.body
+                                                        // the revisions are never the same
+                                                        delete saved._rev
+                                                        delete doc._rev
+                                                        saved.should.eql(doc)
+                                                        return cb()
+                                                    })
+
+                                                }
+                                               ,done)
+                           });
+           return null
        })
 
 })

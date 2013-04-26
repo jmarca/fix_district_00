@@ -31,52 +31,46 @@ var get_docs = require('../lib/get_docs')
 
 var created_locally=false
 before(function(done){
-    superagent.put(couch+'/'+tracking_db)
+    if(test_db !== undefined) return done()
+
+    // create a test db, the put data into it
+    test_db ='test%2fgetter%2f'+Math.floor(Math.random() * 100)
+    created_locally=true
+    var bulks = make_saver(test_db)
+    // generate some random docs
+    var docs=[]
+    for(var i=1;i<1000;i++){
+        var vdsid = ['11320',Math.floor(Math.random()*100)].join('')
+        var ts='2007-02-01 23:23:00'
+        docs.push({'_id':i+'_doc'
+                  ,'data':[{vdsid:vdsid
+                           ,ts:ts}
+                          ,{vdsid:vdsid
+                           ,ts:ts}
+                          ]
+                  })
+    }
+    superagent.put(couch+'/'+test_db)
     .type('json')
     .auth(cuser,cpass)
-    .end(function(r,e){
-        if(test_db !== undefined) return done()
-
-        // create a test db, the put data into it
-        test_db ='test%2fgetter%2f'+Math.floor(Math.random() * 100)
-        created_locally=true
-        var bulks = make_saver(test_db)
-        // generate some random docs
-        var docs=[]
-        for(var i=1;i<1000;i++){
-            var vdsid = ['11320',Math.floor(Math.random()*100)].join('')
-            var ts='2007-02-01 23:23:00'
-            docs.push({'_id':i+'_doc'
-                      ,'data':[{vdsid:vdsid
-                               ,ts:ts}
-                              ,{vdsid:vdsid
-                               ,ts:ts}
-                              ]
-                      })
-        }
-
-        superagent.put(couch+'/'+test_db)
-        .type('json')
-        .auth(cuser,cpass)
-        .end(function(e,r){
-            r.should.have.property('error',false)
-            if(!e)
-                created_locally=true
-            // now populate that db with some docs
-            bulks({docs:docs},function(e,r){
-                if(e) done(e)
-                _.each(r
-                      ,function(resp){
-                           resp.should.have.property('ok')
-                           resp.should.have.property('id')
-                           resp.should.have.property('rev')
-                       });
-                return done()
-            })
-            return null
+    .end(function(e,r){
+        r.should.have.property('error',false)
+        if(!e)
+            created_locally=true
+        // now populate that db with some docs
+        bulks({docs:docs},function(e,r){
+            if(e) done(e)
+            _.each(r
+                  ,function(resp){
+                       resp.should.have.property('ok')
+                       resp.should.have.property('id')
+                       resp.should.have.property('rev')
+                   });
+            return done()
         })
         return null
     })
+    return null
 })
 
 after(function(done){
@@ -111,9 +105,8 @@ describe('get docs',function(){
                                     if(e) return cb(e)
                                     _.each(docs
                                           ,function(resp){
-                                               resp.should.have.property('key')
-                                               resp.should.have.property('doc')
-                                               resp.doc.should.have.property('_id')
+                                               resp.should.have.property('_id')
+                                               resp.should.have.property('_rev')
                                            });
                                     docs.should.have.property('length',100)
                                     // check the tracking db
@@ -135,9 +128,8 @@ describe('get docs',function(){
                                     docs.should.have.property('length',99)
                                     _.each(docs
                                           ,function(resp){
-                                               resp.should.have.property('key')
-                                               resp.should.have.property('doc')
-                                               resp.doc.should.have.property('_id')
+                                               resp.should.have.property('_id')
+                                               resp.should.have.property('_rev')
                                            });
                                     get_docs(test_db,function(e,docs){
                                         if(e) return cb(e)
