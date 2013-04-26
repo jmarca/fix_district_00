@@ -137,38 +137,37 @@ describe('process docs',function(){
                                     return lame(f,cbw)
                                 }
                                ,processor
-                               ]
-                              ,function(e,r){
-                                   saver(cb)
-                                   return null
-                               })
+                               ],cb)
                return null
            }
                            ,function(e){
                                 should.not.exist(e)
-                                // check if couchdb save worked properly
-                                async.eachSeries([wimfilepath,vdsfilepath],function(f,cb){
-                                    lame(f,function(e,fdata){
-                                        // get from couchdb
-                                        var db = [prefix,'wim',2007].join('%2f')
-                                        if(f===vdsfilepath) db = [prefix,'d03',2008].join('%2f')
-                                        // get the target doc
-                                        var id = fdata._id
-                                        superagent.get(couch+'/'+db+'/'+id)
-                                        .type('json')
-                                        .set('accept','application/json')
-                                        .end(function(e,r){
-                                            if(e) return done(e)
-                                            var saved = r.body
-                                            // the revisions are never the same
-                                            delete saved._rev
-                                            delete fdata._rev
-                                            saved.should.eql(fdata)
-                                            return cb()
+                                saver(function(e){
+                                    // check if couchdb save worked properly
+                                    async.eachSeries([wimfilepath,vdsfilepath],function(f,cb){
+                                        lame(f,function(e,fdata){
+                                            // get from couchdb
+                                            var db = [prefix,'wim',2007].join('%2f')
+                                            if(f===vdsfilepath) db = [prefix,'d03',2008].join('%2f')
+                                            // get the target doc
+                                            var id = fdata._id
+                                            superagent.get(couch+'/'+db+'/'+id)
+                                            .type('json')
+                                            .set('accept','application/json')
+                                            .end(function(e,r){
+                                                if(e) return done(e)
+                                                var saved = r.body
+                                                // the revisions are never the same
+                                                delete saved._rev
+                                                delete fdata._rev
+                                                saved.should.eql(fdata)
+                                                return cb()
+                                            })
                                         })
-                                    })
+                                        return null
+                                    },done)
                                     return null
-                                },done)
+                                })
                                 return null
                             })
        })
