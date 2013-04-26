@@ -45,7 +45,9 @@ function lame(file,fn){
 var path = require('path')
 var wimfilepath = path.normalize(__dirname+'/files/wimdoc.json')
 var vdsfilepath = path.normalize(__dirname+'/files/vdsdoc.json')
+var vdsfilepath2 = path.normalize(__dirname+'/files/vdsdoc.json')
 
+var files = [wimfilepath,vdsfilepath,vdsfilepath2]
 var get_docs = require('../lib/get_docs')
 var doc_process = require('../lib/doc_processor')
 var saver = doc_process.save_stash
@@ -132,7 +134,7 @@ describe('process docs',function(){
 
     it('should save docs to wim and d03 couchdbs'
       ,function(done){
-           async.eachSeries([wimfilepath,vdsfilepath],function(f,cb){
+           async.eachSeries(files,function(f,cb){
                async.waterfall([function(cbw){
                                     return lame(f,cbw)
                                 }
@@ -144,7 +146,7 @@ describe('process docs',function(){
                                 should.not.exist(e)
                                 saver(function(e){
                                     // check if couchdb save worked properly
-                                    async.eachSeries([wimfilepath,vdsfilepath],function(f,cb){
+                                    async.eachSeries(files,function(f,cb){
                                         lame(f,function(e,fdata){
                                             // get from couchdb
                                             var db = [prefix,'wim',2007].join('%2f')
