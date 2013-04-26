@@ -24,7 +24,7 @@ var tracking_db ='test%2ftracker%2f'+Math.floor(Math.random() * 100)
 
 var couch = 'http://'+chost+':'+cport
 
-
+console.log('working with couchdb= '+couch)
 //must set the env var before loading and creating the getter
 process.env.FIX_DB_STATE_DB=tracking_db
 var get_docs = require('../lib/get_docs')

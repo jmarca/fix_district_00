@@ -67,6 +67,9 @@ describe('wim site',function(){
            return null
 
        })
+})
+describe('vds site',function(){
+
     it('should make a vds db'
       ,function(done){
            make_target_db({'district':'12'
