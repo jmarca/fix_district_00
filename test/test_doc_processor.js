@@ -43,7 +43,8 @@ function lame(file,fn){
     })
 }
 var path = require('path')
-var filepath = path.normalize(__dirname+'/files/wimdoc.json')
+var wimfilepath = path.normalize(__dirname+'/files/wimdoc.json')
+var vdsfilepath = path.normalize(__dirname+'/files/vdsdoc.json')
 
 var get_docs = require('../lib/get_docs')
 var doc_process = require('../lib/doc_processor')
@@ -51,7 +52,8 @@ var saver = doc_process.save_stash
 var processor = doc_process.doc_process
 
 var created_locally=false
-var cleardbs=[]
+var cleardbs=[[prefix,'wim',2007].join('%2f')
+             ,[prefix,'d03',2008].join('%2f')]
 
 before(function(done){
     superagent.put(couch+'/'+tracking_db)
@@ -128,53 +130,47 @@ after(function(done){
 
 describe('process docs',function(){
 
-    it('should get some docs and process them'
+    it('should save docs to wim and d03 couchdbs'
       ,function(done){
-           async.eachSeries([1,2,3,4,5,6,7,8,9]
-                           ,function(i,cb){
-                                get_docs(test_db,function(e,docs){
-                                    if(e) return cb(e)
-                                    _.each(docs
-                                          ,function(resp){
-                                               resp.should.have.property('key')
-                                               resp.should.have.property('doc')
-                                               resp.doc.should.have.property('_id')
-                                           });
-                                    docs.should.have.property('length',100)
-                                    // check the tracking db
-                                    couch_check({'db':tracking_db
-                                                ,'doc':test_db
-                                                ,'state':'fetched'
-                                                }
-                                               ,function(err,state){
-                                                    if(err) return cb(err)
-                                                    return cb(null)
-                                                })
-                                    return null
-                                });
-                                return null
-                            }
-                           ,function(e,r){
-                                get_docs(test_db,function(e,docs){
-                                    if(e) return cb(e)
-                                    docs.should.have.property('length',99)
-                                    _.each(docs
-                                          ,function(resp){
-                                               resp.should.have.property('key')
-                                               resp.should.have.property('doc')
-                                               resp.doc.should.have.property('_id')
-                                           });
-                                    get_docs(test_db,function(e,docs){
-                                        if(e) return cb(e)
-                                        should.not.exist(docs)
-                                        return done()
+           async.eachSeries([wimfilepath,vdsfilepath],function(f,cb){
+               async.waterfall([function(cbw){
+                                    return lame(f,cbw)
+                                }
+                               ,processor
+                               ]
+                              ,function(e,r){
+                                   saver(cb)
+                                   return null
+                               })
+               return null
+           }
+                           ,function(e){
+                                should.not.exist(e)
+                                // check if couchdb save worked properly
+                                async.eachSeries([wimfilepath,vdsfilepath],function(f,cb){
+                                    lame(f,function(e,fdata){
+                                        // get from couchdb
+                                        var db = [prefix,'wim',2007].join('%2f')
+                                        if(f===vdsfilepath) db = [prefix,'d03',2008].join('%2f')
+                                        // get the target doc
+                                        var id = fdata._id
+                                        superagent.get(couch+'/'+db+'/'+id)
+                                        .type('json')
+                                        .set('accept','application/json')
+                                        .end(function(e,r){
+                                            if(e) return done(e)
+                                            var saved = r.body
+                                            // the revisions are never the same
+                                            delete saved._rev
+                                            delete fdata._rev
+                                            saved.should.eql(fdata)
+                                            return cb()
+                                        })
                                     })
                                     return null
-                                })
+                                },done)
                                 return null
                             })
-           return null
-
        })
 
 })
