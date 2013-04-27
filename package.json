@@ -8,6 +8,7 @@
   },
   "dependencies": {
       "lodash": "",
+      "optimist":"",
       "superagent": "",
       "async": "",
       "geom_utils":"git://github.com/jmarca/geom_utils.git",
