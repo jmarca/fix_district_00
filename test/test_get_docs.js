@@ -28,7 +28,7 @@ console.log('working with couchdb= '+couch)
 //must set the env var before loading and creating the getter
 process.env.FIX_DB_STATE_DB=tracking_db
 var get_docs = require('../lib/get_docs')
-
+var num_test_docs = 231
 var created_locally=false
 before(function(done){
     if(test_db !== undefined) return done()
@@ -39,7 +39,7 @@ before(function(done){
     var bulks = make_saver(test_db)
     // generate some random docs
     var docs=[]
-    for(var i=1;i<1000;i++){
+    for(var i=0;i<num_test_docs;i++){
         var vdsid = ['11320',Math.floor(Math.random()*100)].join('')
         var ts='2007-02-01 23:23:00'
         docs.push({'_id':i+'_doc'
@@ -97,49 +97,51 @@ after(function(done){
 
 describe('get docs',function(){
 
-    it('should get 10 docs and create the tracking db'
+    it('should get all the docs and create the tracking db'
       ,function(done){
-           async.eachSeries([1,2,3,4,5,6,7,8,9]
-                           ,function(i,cb){
-                                get_docs(test_db,function(e,docs){
-                                    if(e) return cb(e)
-                                    _.each(docs
-                                          ,function(resp){
-                                               resp.should.have.property('_id')
-                                               resp.should.have.property('_rev')
-                                           });
-                                    docs.should.have.property('length',100)
-                                    // check the tracking db
-                                    couch_check({'db':tracking_db
-                                                ,'doc':test_db
-                                                ,'state':'fetched'
+           var ticker = 0
+           var keep_going = 1
+           async.whilst(function(){
+               if(ticker > num_test_docs) return false
+               ticker++
+               if( keep_going) return true
+               return false
+                        }
+                       ,function(cb){
+                            get_docs(test_db,function(e,docs){
+                                if(e) return cb(e)
+                                _.each(docs
+                                      ,function(resp){
+                                           resp.should.have.property('_id')
+                                           resp.should.have.property('_rev')
+                                       });
+                                docs.should.have.property('length',1)
+                                // check the tracking db
+                                couch_check({'db':tracking_db
+                                            ,'doc':test_db
+                                            ,'state':'fetched'
+                                            }
+                                           ,function(err,state){
+
+                                                if(err){
+                                                    if(err!=='done') return cb(err)
+                                                    keep_going=false
                                                 }
-                                               ,function(err,state){
-                                                    if(err) return cb(err)
-                                                    return cb(null)
-                                                })
-                                    return null
-                                });
+                                                return cb(null)
+                                            })
                                 return null
-                            }
-                           ,function(e,r){
-                                get_docs(test_db,function(e,docs){
-                                    if(e) return cb(e)
-                                    docs.should.have.property('length',99)
-                                    _.each(docs
-                                          ,function(resp){
-                                               resp.should.have.property('_id')
-                                               resp.should.have.property('_rev')
-                                           });
-                                    get_docs(test_db,function(e,docs){
-                                        if(e) return cb(e)
-                                        should.not.exist(docs)
-                                        return done()
-                                    })
-                                    return null
-                                })
-                                return null
+                            });
+                            return null
+                        }
+                       ,function(e,r){
+                            console.log([ticker,keep_going])
+                            ticker.should.eql(num_test_docs+1)
+                            get_docs(test_db,function(e,docs){
+                                should.exist(e)
+                                e.should.eql('done')
+                                return done()
                             })
+                        })
            return null
 
        })
